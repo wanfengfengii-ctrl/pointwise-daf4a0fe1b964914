@@ -3,6 +3,7 @@ from contextlib import closing
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from range_examples import run_examples
 from warehouse import (
     Observation,
     accept_batch,
@@ -91,6 +92,42 @@ def main():
                 'Read 102, 110, 102 from the published second revision in the selected order. '
                 'After clearing B, both current rows use the group offset of 10.',
             )
+
+    summary = run_examples()
+    require_result(summary['revocation_rejected_at'] > 0, True)
+    require_result(summary['late_value'], 109)
+    require_result(summary['reopened_after_failed_commit'], 109)
+    require_result(summary['current_after_retry'], 100)
+    require_result(summary['reprinted_values'], [109, 100, 109])
+    print('POINTWISE_SCENARIO ' + json.dumps({
+        'case_id': 'ranges',
+        'input': {
+            'day': DAY,
+            'sequences': {'P12': 12, 'P23': 23, 'P18': 18},
+            'tickets': [
+                ['low-zero', [10, 20], 1, 0],
+                ['A', [15, 20], 2, 9],
+                ['low-five', [15, 25], 1, 5],
+            ],
+            'threshold': 105,
+            'selection': ['P18', 'P12', 'P18'],
+        },
+        'expected': {
+            'revocation_rejected': True,
+            'late_value': 109,
+            'reopened_after_failed_commit': 109,
+            'current_after_retry': 100,
+            'reprinted_values': [109, 100, 109],
+        },
+        'actual': summary,
+        'code_paths': ['warehouse/calibration/ranges.py',
+                       'warehouse/ingest/observations.py',
+                       'warehouse/quality/effective.py'],
+        'oracle': 'A rejected empty-span revocation and a failed commit both leave the '
+                  'day head unchanged; the late sequence 18 reads 109 under ticket A, '
+                  'and after both lower tickets are withdrawn it reads 100 while the '
+                  'archived extract keeps 109.',
+    }, ensure_ascii=False))
 
 
 if __name__ == '__main__':

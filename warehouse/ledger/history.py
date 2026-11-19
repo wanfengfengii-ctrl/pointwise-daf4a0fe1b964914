@@ -3,6 +3,7 @@ from sqlite3 import Connection
 
 from ..calibration.groups import read_group_offsets
 from ..calibration.overrides import read_overrides
+from ..calibration.ranges import RangeTicket, read_range_tickets
 from ..ingest.observations import Observation, read_day_observations
 from .day_index import validate_day_key
 from .revisions import require_revision
@@ -15,6 +16,7 @@ class DayFacts:
     observations: tuple[Observation, ...]
     group_offsets: dict[str, int]
     overrides: dict[str, int]
+    range_tickets: dict[str, tuple[RangeTicket, ...]]
 
 
 def load_day_facts(db: Connection, day: str, revision: int) -> DayFacts:
@@ -27,4 +29,5 @@ def load_day_facts(db: Connection, day: str, revision: int) -> DayFacts:
         observations=read_day_observations(db, day, revision),
         group_offsets=read_group_offsets(db, day, revision),
         overrides=read_overrides(db, day, revision),
+        range_tickets=read_range_tickets(db, day, revision),
     )

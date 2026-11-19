@@ -1,6 +1,7 @@
 """Public interfaces for the measurement warehouse."""
 
 from .calibration.audit import read_correction_audit as read_correction_audit
+from .calibration.ranges import set_range_offset as set_range_offset
 from .calibration.updates import set_offsets as set_offsets
 from .ingest.accept import accept_batch as accept_batch
 from .ingest.batch_store import find_batch as find_batch

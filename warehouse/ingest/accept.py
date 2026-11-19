@@ -6,7 +6,7 @@ from ..ledger.revisions import append_revision
 from ..ledger.transactions import atomic_write
 from .batch_store import find_batch, load_batch_payload, save_batch
 from .batches import same_batch_payload, validate_batch
-from .observations import Observation, find_occurrence_conflicts, insert_observations
+from .observations import Observation, find_occurrence_conflicts, find_sequence_conflicts, insert_observations
 from .source_keys import index_source_positions
 
 
@@ -25,10 +25,13 @@ def accept_batch(
         conflicts = find_occurrence_conflicts(db, batch.observations)
         if conflicts:
             raise ValueError(f'occurrence IDs already accepted: {conflicts!r}')
+        sequences = find_sequence_conflicts(db, batch.day, batch.observations)
+        if sequences:
+            raise ValueError(f'source sequences already accepted: {sequences!r}')
 
         revision = append_revision(db, batch.day, 'accept')
         save_batch(db, batch, revision)
         positions = index_source_positions(batch.batch_id, batch.observations)
-        insert_observations(db, batch.observations, positions)
+        insert_observations(db, batch.day, batch.observations, positions)
         advance_day_head(db, batch.day, revision)
         return revision

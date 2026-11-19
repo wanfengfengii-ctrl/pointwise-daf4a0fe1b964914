@@ -21,11 +21,19 @@ def validate_batch(batch_id: object, day: object, observations: object) -> Sourc
 
     source_rows = []
     seen = set()
+    sequences = set()
     for row in observations:
         observation = validate_observation(row)
         if observation.occurrence_id in seen:
             raise ValueError(f'duplicate occurrence in batch: {observation.occurrence_id!r}')
         seen.add(observation.occurrence_id)
+        if observation.source_sequence is not None:
+            key = (observation.group_id, observation.source_sequence)
+            if key in sequences:
+                raise ValueError(
+                    f'duplicate source sequence in batch: {observation.source_sequence!r}'
+                )
+            sequences.add(key)
         source_rows.append(observation)
     return SourceBatch(batch_id, day, tuple(source_rows))
 
